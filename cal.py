@@ -2,7 +2,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import cv2
-import glob 
+import glob
+import os
 
 board_dims = {
 	1: (9, 5),
@@ -30,10 +31,10 @@ board_dims = {
 objpoints = []
 imgpoints = []
 
+print('Processing camera calibration images...')
 for i in range(1,21):
     # load the image, and convert to grayscale
     img = cv2.imread('camera_cal/calibration' + str(i) + '.jpg')
-    print(img.shape)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     ret, corners = cv2.findChessboardCorners(gray, board_dims[i], None)
     if ret == False:
@@ -48,11 +49,24 @@ for i in range(1,21):
         imgpoints.append(corners)
 
 # compute the camera calibration
+print('Computing camera calibration matrix')
 imsize = (1280, 720)
 ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, imsize, None, None)
 
+# undistort the camera_cal/calibration1.jpg
+'''
 distored = cv2.imread('camera_cal/calibration1.jpg')
 undistored = cv2.undistort(distored, mtx, dist, None, mtx)
 plt.imshow(undistored)
 plt.show()
+'''
+
+# undistort all test_images
+print('Undistorting test images')
+for fname in os.listdir('test_images/'):
+    print('Undistorting ' + fname)
+    img_rpath = 'test_images/' + fname
+    img = cv2.imread(img_rpath)
+    undistorted = cv2.undistort(img, mtx, dist, None, mtx)
+    cv2.imwrite('output_images/' + 'undistorted_' + fname, undistorted)
 
