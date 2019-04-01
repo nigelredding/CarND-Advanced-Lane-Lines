@@ -26,21 +26,26 @@ def abs_sobel_thresh(img, orient='x', thresh_min=0, thresh_max=255):
     # Return the result
     return binary_output
 
+def hls_thresh(image, chan='h', thresh_min=90, thresh_max=255):
+    if chan == 'h':
+        ch = 0
+    elif chan == 'l':
+        ch = 1
+    elif chan == 's':
+        ch = 2
+    else:
+        raise ValueError('channel must be h, l or s')
+    
+    hls = cv2.cvtColor(image, cv2.COLOR_RGB2HLS)
+    chan_img = image[:,:,ch]
+    thresh_img = np.zeros_like(chan_img)
+    thresh_img[(chan_img > thresh_min) & (chan_img <= thresh_max)] = 1
+    return thresh_img
+
 img = cv2.imread('test_images/test3.jpg')
 
-hls = cv2.cvtColor(img, cv2.COLOR_RGB2HLS)
-lChannel = hls[:,:,1]
-sChannel = hls[:,:,2]
-
-# create threshholded image for sChannel
-sChannel_thresh = np.zeros_like(sChannel)
-sChannel_thresh[(sChannel > 90) & (sChannel <= 255)] = 1
-
-# create threshholded image for lChannel
-lChannel_thresh = np.zeros_like(lChannel)
-lChannel_thresh[(lChannel > 90) & (lChannel <= 255)] = 1
-
-# create absolute sobel threshhold
+sChannel_thresh = hls_thresh(img, chan='s')
+lChannel_thresh = hls_thresh(img, chan='l')
 sobelx_thresh = abs_sobel_thresh(img, 'x', 20, 100)
 
 combined = np.zeros_like(sobelx_thresh)
