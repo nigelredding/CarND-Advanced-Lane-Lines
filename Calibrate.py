@@ -32,7 +32,6 @@ def calibrate_camera():
 	objpoints = []
 	imgpoints = []
 
-	print('Processing camera calibration images...')
 	for i in range(1,21):
 		# load the image, and convert to grayscale
 		img = cv2.imread('camera_cal/calibration' + str(i) + '.jpg')
@@ -50,7 +49,6 @@ def calibrate_camera():
 			imgpoints.append(corners)
 
 	# compute the camera calibration
-	print('Computing camera calibration matrix')
 	imsize = (1280, 720)
 	ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, imsize, None, None)
 	return mtx, dist, rvecs, tvecs

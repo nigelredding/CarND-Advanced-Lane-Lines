@@ -20,9 +20,3 @@ def perspective_transform_road_image(img):
     M = cv2.getPerspectiveTransform(src, dst)
     warped = np.copy(cv2.warpPerspective(img, M, (img.shape[1], img.shape[0])))
     return warped
-
-img = cv2.imread('test_images/test3.jpg')
-p = perspective_transform_road_image(img)
-
-plt.imshow(p)
-plt.show()

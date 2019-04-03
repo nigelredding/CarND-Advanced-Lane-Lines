@@ -7,7 +7,7 @@ import os
 
 # Define a function that takes an image, gradient orientation,
 # and threshold min / max values.
-def abs_sobel_thresh(img, orient='x', thresh_min=0, thresh_max=255):
+def abs_sobel_thresh(img, orient='x', thresh_min=20, thresh_max=100):
     # Convert to grayscale
     gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     # Apply x or y gradient with the OpenCV Sobel() function
@@ -42,24 +42,13 @@ def hls_thresh(image, chan='h', thresh_min=90, thresh_max=255):
     thresh_img[(chan_img > thresh_min) & (chan_img <= thresh_max)] = 1
     return thresh_img
 
-img = cv2.imread('test_images/test3.jpg')
+def combined_images(sChannel_thresh, lChannel_thresh, sobelx_thresh):
+    combined = np.zeros_like(sobelx_thresh)
+    combined[(sChannel_thresh == 1) & (lChannel_thresh == 1) & (sobelx_thresh == 1)] = 1
+    return combined
 
-sChannel_thresh = hls_thresh(img, chan='s')
-lChannel_thresh = hls_thresh(img, chan='l')
-sobelx_thresh = abs_sobel_thresh(img, 'x', 20, 100)
-
-combined = np.zeros_like(sobelx_thresh)
-combined[(sChannel_thresh == 1) & (lChannel_thresh == 1) & (sobelx_thresh == 1)] = 1
-
-
-plt.imshow(sChannel_thresh, cmap='gray')
-plt.show()
-
-plt.imshow(lChannel_thresh, cmap='gray')
-plt.show()
-
-plt.imshow(sobelx_thresh, cmap='gray')
-plt.show()
-
-plt.imshow(combined, cmap='gray')
-plt.show()
+def binary_threshhold(img):
+    sChannel_thresh = hls_thresh(img, chan='s')
+    lChannel_thresh = hls_thresh(img, chan='l')
+    sobelx_thresh = abs_sobel_thresh(img, 'x')
+    return combined_images(sChannel_thresh, lChannel_thresh, sobelx_thresh)
