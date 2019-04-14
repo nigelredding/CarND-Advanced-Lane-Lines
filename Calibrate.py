@@ -53,5 +53,9 @@ def calibrate_camera():
 	ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, imsize, None, None)
 	return mtx, dist, rvecs, tvecs
 
+def undistort(img):
+	mtx, dist, _, _ = calibrate_camera()
+	return cv2.undistort(img, mtx, dist, None, mtx)
+
 
 	
