@@ -84,15 +84,15 @@ def perspective_transform_road_image(img):
 '''
 # Define a function that takes an image, gradient orientation,
 # and threshold min / max values.
-def abs_sobel_thresh(img, orient='x', thresh_min=20, thresh_max=100):
+def abs_sobel_thresh(img, orient='x', thresh_min=10, thresh_max=100, sobel_kernel=3):
     # Convert to grayscale
     gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
     # Apply x or y gradient with the OpenCV Sobel() function
     # and take the absolute value
     if orient == 'x':
-        abs_sobel = np.absolute(cv2.Sobel(gray, cv2.CV_64F, 1, 0))
+        abs_sobel = np.absolute(cv2.Sobel(gray, cv2.CV_64F, 1, 0, ksize=sobel_kernel))
     if orient == 'y':
-        abs_sobel = np.absolute(cv2.Sobel(gray, cv2.CV_64F, 0, 1))
+        abs_sobel = np.absolute(cv2.Sobel(gray, cv2.CV_64F, 0, 1, ksize=sobel_kernel))
     # Rescale back to 8 bit integer
     scaled_sobel = np.uint8(255*abs_sobel/np.max(abs_sobel))
     # Create a copy and apply the threshold
@@ -213,6 +213,9 @@ def find_lane_pixels(binary_warped):
     return leftx, lefty, rightx, righty
 
 def draw_on_warped(binary_warped, leftx, lefty, rightx, righty, margin):
+    global last_left_poly
+    global last_right_poly
+
     ploty = np.linspace(0, binary_warped.shape[0]-1, binary_warped.shape[0])
     left_fitx = last_left_poly[0]*ploty**2 + last_left_poly[1]*ploty + last_left_poly[2]
     right_fitx = last_right_poly[0]*ploty**2 + last_right_poly[1]*ploty + last_right_poly[2]
@@ -366,26 +369,38 @@ def fit_polynomial_helper(binary_warped):
     Pipeline
 '''
 # picture pipeline
-def pic_pipeline(img):
+def pic_pipeline(img, mtx, dist):
     '''
     Input a color image taken from a car camera.
     Output an image with lane lines drawn.
     '''
+    global last_left_poly
+    global last_right_poly
+
     # undistort the image
-    undistorted = undistort(img)
+    undistorted = undistort(img, mtx, dist)
     # get the binary threshholded image
     bin_thresholded = binary_threshhold(undistorted)
     # warp to the proper perspective
     Minv, binary_warped = perspective_transform_road_image(bin_thresholded)
+
+
     # get lanes, prepare for drawing
     leftx, lefty, rightx, righty = find_lane_pixels(binary_warped)
-    # warped image with lanes drawn
-    warped_w_lanes = draw_on_warped(binary_warped, leftx, lefty, rightx, righty, margin=80)
+
+
     # get the lane polynomials
     if len(leftx) != 0 and len(lefty) != 0:
         last_left_poly = np.polyfit(lefty, leftx, 2)
     if len(rightx) != 0 and len(righty) != 0:
         last_right_poly = np.polyfit(righty, rightx, 2)
+
+    print(last_left_poly, last_right_poly)
+
+    # warped image with lanes drawn
+    warped_w_lanes = draw_on_warped(binary_warped, leftx, lefty, rightx, righty, margin=80)
+
+
     orig_image_w_lanes = fill_area(img, binary_warped, last_left_poly, last_right_poly, Minv)
 
     return warped_w_lanes, orig_image_w_lanes
@@ -415,18 +430,20 @@ def vid_pipeline(img, mtx, dist):
 DEMO
 '''
 
-'''
-img = cv2.imread('test_images/straight_lines1.jpg')
-out = pipeline(img)
+mtx, dist, _, _ = calibrate_camera()
+img = cv2.imread('test_images/test4.jpg')
+warped, orig_w_lines = pic_pipeline(img, mtx, dist)
 
 
-# plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-plt.imshow(out)
+plt.imshow(cv2.cvtColor(orig_w_lines, cv2.COLOR_BGR2RGB))
+# plt.imshow(orig_w_lines)
 plt.show()
-'''
 
+
+'''
 print('Processing video')
 mtx, dist, _, _ = calibrate_camera()
 clip1 = VideoFileClip('project_video.mp4')
-white_clip = clip1.fl_image(lambda img: vid_pipeline(img, mtx, dist)).subclip(0,2) #NOTE: this function expects color images!!
+white_clip = clip1.fl_image(lambda img: vid_pipeline(img, mtx, dist))
 white_clip.write_videofile('out.mp4')
+'''
