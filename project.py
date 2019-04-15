@@ -11,21 +11,17 @@ import os
 IMG_ROWS = 720
 IMG_COLS = 1280
 
-'''
-transform_src = np.float32(
-    [[(IMG_ROWS / 2) - 55, IMG_COLS / 2 + 100],
-    [((IMG_ROWS / 6) - 10), IMG_COLS],
-    [(IMG_ROWS * 5 / 6) + 60, IMG_COLS],
-    [(IMG_ROWS / 2 + 55), IMG_COLS / 2 + 100]])
-transform_dst = np.float32(
-    [[(IMG_ROWS / 4), 0],
-    [(IMG_ROWS / 4), IMG_COLS],
-    [(IMG_ROWS * 3 / 4), IMG_COLS],
-    [(IMG_ROWS * 3 / 4), 0]])
-'''
+transform_src = np.array([
+    [205, 720],
+    [1120, 720],
+    [745, 480],
+    [550, 480]], np.float32)
 
-transform_src = np.array([[205, 720], [1120, 720], [745, 480], [550, 480]], np.float32)
-transform_dst = np.array([[205, 720], [1120, 720], [1120, 0], [205, 0]], np.float32)
+transform_dst = np.array([
+    [205, 720],
+    [1120, 720],
+    [1120, 0],
+    [205, 0]], np.float32)
 
 '''
     Camera Calibration
@@ -296,18 +292,9 @@ def search_around_poly(binary_warped):
 def curvature(A,B,C,y):
     return (1+(2*A*y + B)**2)**(3/2)/abs(2*A)
 
-def curve_and_distance(binary_warped, left_lane_inds, right_lane_inds):
+def curve_and_distance(binary_warped, leftx, lefty, rightx, righty):
     ploty = np.linspace(0, binary_warped.shape[0]-1, binary_warped.shape[0])
     ymax = np.max(ploty)
-
-    nonzero = binary_warped.nonzero()
-    nonzerox = np.array(nonzero[0])
-    nonzeroy = np.array(nonzero[1])
-
-    leftx = nonzerox[left_lane_inds]
-    lefty = nonzeroy[left_lane_inds]
-    rightx =  nonzerox[right_lane_inds]
-    righty = nonzeroy[right_lane_inds]
 
     ym_per_pix = 30/720
     xm_per_pix = 3.7/900
@@ -326,7 +313,7 @@ def curve_and_distance(binary_warped, left_lane_inds, right_lane_inds):
     
     dist_from_center = np.abs(center_index - lanes_center)*xm_per_pix
 
-    return np.array([left_curverad, right_curverad, dist_from_center])
+    return left_curverad, right_curverad, dist_from_center
 
 ## draw lane area
 def fill_area(img, bin_img, left_fit_poly, right_fit_poly, inverse_matrix):
@@ -378,6 +365,8 @@ def fit_polynomial_helper(binary_warped):
     if len(rightx) != 0 and len(righty) != 0:
         last_right_poly = np.polyfit(righty, rightx, 2)
 
+    return leftx, lefty, rightx, righty
+
 '''
     Pipeline
 '''
@@ -396,8 +385,6 @@ def pic_pipeline(img, mtx, dist):
     binary_thresh = binary_threshhold(undistorted)
     # warp to the proper perspective
     Minv, binary_warped = perspective_transform_road_image(binary_thresh)
-
-
     # get lanes, prepare for drawing
     leftx, lefty, rightx, righty = find_lane_pixels(binary_warped)
 
@@ -431,9 +418,16 @@ def vid_pipeline(img, mtx, dist):
     # warp to the proper perspective
     Minv, binary_warped = perspective_transform_road_image(binary_thresh)
     # fit the polynomial to the output image
-    fit_polynomial_helper(binary_warped)
+    leftx, lefty, rightx, righty = fit_polynomial_helper(binary_warped)
+    # get curvature and distance data
+    left_curverad, right_curverad, dist_from_ct = curve_and_distance(binary_warped, leftx, lefty, rightx, righty)
 
     out = fill_area(img, binary_warped, last_left_poly, last_right_poly, Minv)
+    curve_stats = 'Left curve radius: ' + str(left_curverad) + '  Right curve radius: ' + str(right_curverad)
+    dist_stat = 'Distance from center: ' + str(dist_from_ct)
+    cv2.putText(out, curve_stats, (10, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), lineType=cv2.LINE_AA)
+    cv2.putText(out, dist_stat, (10, 135), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), lineType=cv2.LINE_AA) 
+ 
     
     return out
 
@@ -455,7 +449,7 @@ for fname in os.listdir('test_images/'):
     print('Processing ' + fname)
     img = cv2.imread('test_images/' + fname)
     binary_thresh, binary_warped, warped_w_lanes, orig_w_lanes = pic_pipeline(img, mtx, dist)
-    cv2.imwrite('output_images/' + 'binary_thresh_' + fname, binary_thresh)
+    cv2.imwrite('output_images/' + 'binary_thresh_' + fname, binary_thresh.astype('uint8') * 255)
     cv2.imwrite('output_images/' + 'warped_w_lanes_' + fname, warped_w_lanes)
     cv2.imwrite('output_images/' + 'orig_w_lanes' + fname, orig_w_lanes)
 
