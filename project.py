@@ -3,6 +3,29 @@ import matplotlib.pyplot as plt
 import cv2
 from moviepy.editor import VideoFileClip
 from IPython.display import HTML
+import os
+
+'''
+    Data for images
+'''
+IMG_ROWS = 720
+IMG_COLS = 1280
+
+'''
+transform_src = np.float32(
+    [[(IMG_ROWS / 2) - 55, IMG_COLS / 2 + 100],
+    [((IMG_ROWS / 6) - 10), IMG_COLS],
+    [(IMG_ROWS * 5 / 6) + 60, IMG_COLS],
+    [(IMG_ROWS / 2 + 55), IMG_COLS / 2 + 100]])
+transform_dst = np.float32(
+    [[(IMG_ROWS / 4), 0],
+    [(IMG_ROWS / 4), IMG_COLS],
+    [(IMG_ROWS * 3 / 4), IMG_COLS],
+    [(IMG_ROWS * 3 / 4), 0]])
+'''
+
+transform_src = np.array([[205, 720], [1120, 720], [745, 480], [550, 480]], np.float32)
+transform_dst = np.array([[205, 720], [1120, 720], [1120, 0], [205, 0]], np.float32)
 
 '''
     Camera Calibration
@@ -64,19 +87,9 @@ def undistort(img, mtx, dist):
 '''
 def perspective_transform_road_image(img):
     img_size = (img.shape[1], img.shape[0])
-    src = np.float32(
-        [[(img_size[0] / 2) - 55, img_size[1] / 2 + 100],
-        [((img_size[0] / 6) - 10), img_size[1]],
-        [(img_size[0] * 5 / 6) + 60, img_size[1]],
-        [(img_size[0] / 2 + 55), img_size[1] / 2 + 100]])
-    dst = np.float32(
-        [[(img_size[0] / 4), 0],
-        [(img_size[0] / 4), img_size[1]],
-        [(img_size[0] * 3 / 4), img_size[1]],
-        [(img_size[0] * 3 / 4), 0]])
-    M = cv2.getPerspectiveTransform(src, dst)
-    warped = np.copy(cv2.warpPerspective(img, M, (img.shape[1], img.shape[0])))
-    Minv = cv2.getPerspectiveTransform(dst, src)
+    M = cv2.getPerspectiveTransform(transform_src, transform_dst)
+    warped = np.copy(cv2.warpPerspective(img, M, (IMG_COLS, IMG_ROWS)))
+    Minv = cv2.getPerspectiveTransform(transform_dst, transform_src)
     return Minv, warped
 
 '''
@@ -380,9 +393,9 @@ def pic_pipeline(img, mtx, dist):
     # undistort the image
     undistorted = undistort(img, mtx, dist)
     # get the binary threshholded image
-    bin_thresholded = binary_threshhold(undistorted)
+    binary_thresh = binary_threshhold(undistorted)
     # warp to the proper perspective
-    Minv, binary_warped = perspective_transform_road_image(bin_thresholded)
+    Minv, binary_warped = perspective_transform_road_image(binary_thresh)
 
 
     # get lanes, prepare for drawing
@@ -395,15 +408,13 @@ def pic_pipeline(img, mtx, dist):
     if len(rightx) != 0 and len(righty) != 0:
         last_right_poly = np.polyfit(righty, rightx, 2)
 
-    print(last_left_poly, last_right_poly)
-
     # warped image with lanes drawn
     warped_w_lanes = draw_on_warped(binary_warped, leftx, lefty, rightx, righty, margin=80)
 
 
-    orig_image_w_lanes = fill_area(img, binary_warped, last_left_poly, last_right_poly, Minv)
+    orig_w_lanes = fill_area(img, binary_warped, last_left_poly, last_right_poly, Minv)
 
-    return warped_w_lanes, orig_image_w_lanes
+    return binary_thresh, binary_warped, warped_w_lanes, orig_w_lanes
 
 
 
@@ -416,9 +427,9 @@ def vid_pipeline(img, mtx, dist):
     # undistort the image
     undistorted = undistort(img, mtx, dist)
     # get the binary threshholded image
-    bin_thresholded = binary_threshhold(undistorted)
+    binary_thresh = binary_threshhold(undistorted)
     # warp to the proper perspective
-    Minv, binary_warped = perspective_transform_road_image(bin_thresholded)
+    Minv, binary_warped = perspective_transform_road_image(binary_thresh)
     # fit the polynomial to the output image
     fit_polynomial_helper(binary_warped)
 
@@ -429,21 +440,32 @@ def vid_pipeline(img, mtx, dist):
 '''
 DEMO
 '''
-
+# get the camera calibration
 mtx, dist, _, _ = calibrate_camera()
-img = cv2.imread('test_images/test4.jpg')
-warped, orig_w_lines = pic_pipeline(img, mtx, dist)
 
+# undistort calibration3.jpg
+print('Undistorting camera_cal/calibration3.jpg')
+cal3 = cv2.imread('camera_cal/calibration3.jpg')
+cal3_undistorted = undistort(cal3, mtx, dist)
+cv2.imwrite('output_images/undistorted_calibration3.jpg', cal3_undistorted)
 
-plt.imshow(cv2.cvtColor(orig_w_lines, cv2.COLOR_BGR2RGB))
-# plt.imshow(orig_w_lines)
-plt.show()
+# run pipeline on all images
+print('Running pipeline on test_images/')
+for fname in os.listdir('test_images/'):
+    print('Processing ' + fname)
+    img = cv2.imread('test_images/' + fname)
+    binary_thresh, binary_warped, warped_w_lanes, orig_w_lanes = pic_pipeline(img, mtx, dist)
+    cv2.imwrite('output_images/' + 'binary_thresh_' + fname, binary_thresh)
+    cv2.imwrite('output_images/' + 'warped_w_lanes_' + fname, warped_w_lanes)
+    cv2.imwrite('output_images/' + 'orig_w_lanes' + fname, orig_w_lanes)
 
-
-'''
 print('Processing video')
-mtx, dist, _, _ = calibrate_camera()
 clip1 = VideoFileClip('project_video.mp4')
 white_clip = clip1.fl_image(lambda img: vid_pipeline(img, mtx, dist))
 white_clip.write_videofile('out.mp4')
+
+'''
+for fname in os.listdir('test_images/'):
+    img = cv2.imread('test_images/' + fname)
+    print(img.shape)
 '''
