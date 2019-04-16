@@ -387,23 +387,27 @@ def pic_pipeline(img, mtx, dist):
     Minv, binary_warped = perspective_transform_road_image(binary_thresh)
     # get lanes, prepare for drawing
     leftx, lefty, rightx, righty = find_lane_pixels(binary_warped)
-
-
     # get the lane polynomials
     if len(leftx) != 0 and len(lefty) != 0:
         last_left_poly = np.polyfit(lefty, leftx, 2)
     if len(rightx) != 0 and len(righty) != 0:
         last_right_poly = np.polyfit(righty, rightx, 2)
-
     # warped image with lanes drawn
     warped_w_lanes = draw_on_warped(binary_warped, leftx, lefty, rightx, righty, margin=80)
-
-
+    # get curvature and distance data
+    left_curverad, right_curverad, dist_from_ct = curve_and_distance(binary_warped, leftx, lefty, rightx, righty)
+    # draw lanes on original image
     orig_w_lanes = fill_area(img, binary_warped, last_left_poly, last_right_poly, Minv)
-
+    # draw the stats on the image
+    draw_stats_on_img(orig_w_lanes, left_curverad, right_curverad, dist_from_ct)
+    
     return binary_thresh, binary_warped, warped_w_lanes, orig_w_lanes
 
-
+def draw_stats_on_img(img, left_curverad, right_curverad, dist_from_ct):
+    curve_stats = 'Left curve radius: ' + str(left_curverad) + '  Right curve radius: ' + str(right_curverad)
+    dist_stat = 'Distance from center: ' + str(dist_from_ct)
+    cv2.putText(img, curve_stats, (10, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), lineType=cv2.LINE_AA)
+    cv2.putText(img, dist_stat, (10, 135), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), lineType=cv2.LINE_AA) 
 
 # video pipeline
 def vid_pipeline(img, mtx, dist):
@@ -421,14 +425,11 @@ def vid_pipeline(img, mtx, dist):
     leftx, lefty, rightx, righty = fit_polynomial_helper(binary_warped)
     # get curvature and distance data
     left_curverad, right_curverad, dist_from_ct = curve_and_distance(binary_warped, leftx, lefty, rightx, righty)
-
+    # draw the lane lines on the original image
     out = fill_area(img, binary_warped, last_left_poly, last_right_poly, Minv)
-    curve_stats = 'Left curve radius: ' + str(left_curverad) + '  Right curve radius: ' + str(right_curverad)
-    dist_stat = 'Distance from center: ' + str(dist_from_ct)
-    cv2.putText(out, curve_stats, (10, 100), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), lineType=cv2.LINE_AA)
-    cv2.putText(out, dist_stat, (10, 135), cv2.FONT_HERSHEY_SIMPLEX, 0.75, (255, 255, 255), lineType=cv2.LINE_AA) 
- 
-    
+    # draw the stats on the image
+    draw_stats_on_img(out, left_curverad, right_curverad, dist_from_ct)
+
     return out
 
 '''
@@ -443,6 +444,12 @@ cal3 = cv2.imread('camera_cal/calibration3.jpg')
 cal3_undistorted = undistort(cal3, mtx, dist)
 cv2.imwrite('output_images/undistorted_calibration3.jpg', cal3_undistorted)
 
+# warp color image
+print('Warping test_images/test3.jpg')
+img = cv2.imread('test_images/test3.jpg')
+_, warped = perspective_transform_road_image(img)
+cv2.imwrite('output_images/perspective_color_test3.jpg', warped)
+
 # run pipeline on all images
 print('Running pipeline on test_images/')
 for fname in os.listdir('test_images/'):
@@ -451,15 +458,9 @@ for fname in os.listdir('test_images/'):
     binary_thresh, binary_warped, warped_w_lanes, orig_w_lanes = pic_pipeline(img, mtx, dist)
     cv2.imwrite('output_images/' + 'binary_thresh_' + fname, binary_thresh.astype('uint8') * 255)
     cv2.imwrite('output_images/' + 'warped_w_lanes_' + fname, warped_w_lanes)
-    cv2.imwrite('output_images/' + 'orig_w_lanes' + fname, orig_w_lanes)
+    cv2.imwrite('output_images/' + 'orig_w_lanes_' + fname, orig_w_lanes)
 
 print('Processing video')
 clip1 = VideoFileClip('project_video.mp4')
 white_clip = clip1.fl_image(lambda img: vid_pipeline(img, mtx, dist))
-white_clip.write_videofile('out.mp4')
-
-'''
-for fname in os.listdir('test_images/'):
-    img = cv2.imread('test_images/' + fname)
-    print(img.shape)
-'''
+white_clip.write_videofile('project_video.mp4')

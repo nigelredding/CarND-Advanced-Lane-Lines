@@ -3,11 +3,11 @@
 [//]: # (Image References)
 
 [image1]: ./output_images/undistorted_calibration3.jpg "Undistorted"
-[image2]: ./test_images/test1.jpg "Road Transformed"
-[image3]: ./output_images/binary_thresh_test1.jpg "Binary Example"
-[image4]: ./output_images/perspective_color_test1.jpg "Warp Example"
-[image5]: ./output_images/warped_w_lanes_test1.jpg "Fit Visual"
-[image6]: ./examples/example_output.jpg "Output"
+[image2]: ./test_images/test3.jpg "Road Transformed"
+[image3]: ./output_images/binary_thresh_test3.jpg "Binary Example"
+[image4]: ./output_images/perspective_color_test3.jpg "Warp Example"
+[image5]: ./output_images/warped_w_lanes_test3.jpg "Fit Visual"
+[image6]: ./output_images/orig_w_lanes_test3.jpg "Output"
 [video1]: ./project_video.mp4 "Video"
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/571/view) Points
@@ -16,15 +16,9 @@
 
 ---
 
-### Writeup / README
-
-#### 1. Provide a Writeup / README that includes all the rubric points and how you addressed each one.  You can submit your writeup as markdown or pdf.  [Here](https://github.com/udacity/CarND-Advanced-Lane-Lines/blob/master/writeup_template.md) is a template writeup for this project you can use as a guide and a starting point.  
-
-You're reading it!
+### Writeup
 
 ### Camera Calibration
-
-#### 1. Briefly state how you computed the camera matrix and distortion coefficients. Provide an example of a distortion corrected calibration image.
 
 The code for this step is contained in lines 52 to 75 of project.py. We have 20 calibration chessboard images. I set up two arrays, objpoints and imgpoints, indexed by the chessboard images. The entries in objpoints are the "real-world" points corresponding to the corners of the given chessboard. The entries in imgpoints are the actual coordinates of the corners on the chessboard image.
 
@@ -34,8 +28,6 @@ to undistort the image `camera_cal/calibration3.jpg`. The result is below
 ![alt text][image1]
 
 ### Pipeline (single images)
-
-#### 1. Provide an example of a distortion-corrected image.
 
 To demonstrate this step, I will describe how I apply the distortion correction to one of the test images like this one:
 ![alt text][image2]
