@@ -8,7 +8,7 @@
 [image4]: ./output_images/perspective_color_test3.jpg "Warp Example"
 [image5]: ./output_images/warped_w_lanes_test3.jpg "Fit Visual"
 [image6]: ./output_images/orig_w_lanes_test3.jpg "Output"
-[video1]: ./project_video.mp4 "Video"
+[video1]: ./output_project_video.mp4 "Video"
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/571/view) Points
 

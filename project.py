@@ -463,4 +463,4 @@ for fname in os.listdir('test_images/'):
 print('Processing video')
 clip1 = VideoFileClip('project_video.mp4')
 white_clip = clip1.fl_image(lambda img: vid_pipeline(img, mtx, dist))
-white_clip.write_videofile('project_video.mp4')
+white_clip.write_videofile('output_project_video.mp4')
