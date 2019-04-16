@@ -316,7 +316,7 @@ def curve_and_distance(binary_warped, leftx, lefty, rightx, righty):
     return left_curverad, right_curverad, dist_from_center
 
 ## draw lane area
-def fill_area(img, bin_img, left_fit_poly, right_fit_poly, inverse_matrix):
+def fill_lane(img, bin_img, left_fit_poly, right_fit_poly, inverse_matrix):
     ## create copy of image
     img_copy = np.copy(cv2.resize(img, (1280, 720)))
     
@@ -397,7 +397,7 @@ def pic_pipeline(img, mtx, dist):
     # get curvature and distance data
     left_curverad, right_curverad, dist_from_ct = curve_and_distance(binary_warped, leftx, lefty, rightx, righty)
     # draw lanes on original image
-    orig_w_lanes = fill_area(img, binary_warped, last_left_poly, last_right_poly, Minv)
+    orig_w_lanes = fill_lane(img, binary_warped, last_left_poly, last_right_poly, Minv)
     # draw the stats on the image
     draw_stats_on_img(orig_w_lanes, left_curverad, right_curverad, dist_from_ct)
     
@@ -426,7 +426,7 @@ def vid_pipeline(img, mtx, dist):
     # get curvature and distance data
     left_curverad, right_curverad, dist_from_ct = curve_and_distance(binary_warped, leftx, lefty, rightx, righty)
     # draw the lane lines on the original image
-    out = fill_area(img, binary_warped, last_left_poly, last_right_poly, Minv)
+    out = fill_lane(img, binary_warped, last_left_poly, last_right_poly, Minv)
     # draw the stats on the image
     draw_stats_on_img(out, left_curverad, right_curverad, dist_from_ct)
 

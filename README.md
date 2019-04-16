@@ -10,10 +10,6 @@
 [image6]: ./output_images/orig_w_lanes_test3.jpg "Output"
 [video1]: ./output_project_video.mp4 "Video"
 
-## [Rubric](https://review.udacity.com/#!/rubrics/571/view) Points
-
-### Here I will consider the rubric points individually and describe how I addressed each point in my implementation.  
-
 ---
 
 ### Writeup
@@ -34,7 +30,7 @@ To demonstrate this step, I will describe how I apply the distortion correction 
 
 #### 2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image.  Provide an example of a binary image result.
 
-I used a combination of color and gradient thresholds to generate a binary image (thresholding steps at lines # through # in `another_file.py`).  Here's an example of my output for this step.  (note: this is not actually from one of the test images)
+In order to create my binary threshholded images, I used a combination of a Sobel transform (gradient in the x direction), and threshholding for the 'l' and 's' channels of the image. The code for this is in lines 115-140 of project.py.
 
 ![alt text][image3]
 
@@ -71,11 +67,11 @@ Below we see the result of fitting out lanes with the resulting polynomials. Thi
 
 #### 5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
 
-I did this in lines # through # in my code in `my_other_file.py`
+I did this in lines 292 through 316 in my code in `project.py`
 
 #### 6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
 
-I implemented this step in lines # through # in my code in `yet_another_file.py` in the function `map_lane()`.  Here is an example of my result on a test image:
+I implemented this step in lines 319 through 347 in my code in `project.py` in the function `fill_lane()`.  Here is an example of my result on a test image:
 
 ![alt text][image6]
 
@@ -83,9 +79,9 @@ I implemented this step in lines # through # in my code in `yet_another_file.py`
 
 ### Pipeline (video)
 
-#### 1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
+#### 1. Final Video Output
 
-Here's a [link to my video result](./project_video.mp4)
+Here's a [link to my video result](./output_project_video.mp4)
 
 ---
 
