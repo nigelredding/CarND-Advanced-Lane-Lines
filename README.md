@@ -14,6 +14,8 @@
 
 ### Writeup
 
+All code references are to `project.py`.
+
 ### Camera Calibration
 
 The code for this step is contained in lines 52 to 75 of project.py. We have 20 calibration chessboard images. I set up two arrays, objpoints and imgpoints, indexed by the chessboard images. The entries in objpoints are the "real-world" points corresponding to the corners of the given chessboard. The entries in imgpoints are the actual coordinates of the corners on the chessboard image.
@@ -30,7 +32,7 @@ To demonstrate this step, I will describe how I apply the distortion correction 
 
 #### 2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image.  Provide an example of a binary image result.
 
-In order to create my binary threshholded images, I used a combination of a Sobel transform (gradient in the x direction), and threshholding for the 'l' and 's' channels of the image. The code for this is in lines 115-140 of project.py.
+In order to create my binary threshholded images, I used a combination of a Sobel transform (gradient in the x direction), and threshholding for the 'l' and 's' channels of the image. The code for this is in lines 96-140 of project.py.
 
 ![alt text][image3]
 
@@ -67,7 +69,31 @@ Below we see the result of fitting out lanes with the resulting polynomials. Thi
 
 #### 5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
 
-I did this in lines 292 through 316 in my code in `project.py`
+I did this in lines 292 through 316 in my code in `project.py`. I first fit the polynomials for the left and right lines in "x,y real world space". First we set 
+
+`ym_per_pix = 30/720`
+
+`xm_per_pix = 3.7/900`
+
+and use these constants to calculate the second order polynomials for the left and right lanes, respectively,
+
+`left_fit_poly = np.polyfit(lefty * ym_per_pix, leftx * xm_per_pix, 2)`
+
+`right_fit_poly = np.polyfit(rightx * ym_per_pix, righty * xm_per_pix, 2)`
+
+From these polynomials we calculate the left and right curve radii from the formulae
+
+`left_curverad = ((1 + (2*left_fit_poly[0]*ymax*ym_per_pix + left_fit_poly[1])**2)**1.5) / np.absolute(2*left_fit_poly[0])`
+
+`right_curverad =  ((1 + (2*right_fit_poly[0]*ymax*ym_per_pix + right_fit_poly[1])**2)**1.5) / np.absolute(2*right_fit_poly[0])`.
+
+We calculate the position of the vehicle with respect to the center by calculating the difference between the center of the images and the center point between the two lines. Our full calculation is as follows:
+
+`center_index = binary_warped.shape[1]//2`
+
+`lanes_center = (min(leftx) + max(rightx))//2`
+    
+`dist_from_center = np.abs(center_index - lanes_center)*xm_per_pix`
 
 #### 6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
 
@@ -89,4 +115,4 @@ Here's a [link to my video result](./output_project_video.mp4)
 
 #### 1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
+The main issue I faced was when the colour of the road changed dramatically, as in  0:23 of the video. The main problem is that the yellow line is barely visible when the vehicle is approaching a sunny region. Threfore, I should modify my pipeline so that white lines and yellow lines are always detected, even when half of the image is in the sunlight and the other half is in a shaddow.
